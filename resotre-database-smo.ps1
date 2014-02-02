@@ -3,7 +3,7 @@
 # Restore to the same database, with different location
 #============================================================
 
-#backupFile = "C:\Testdb.bak"     #Back up file
+backupFile = "C:\Testdb.bak"     #Back up file
 
 #load assemblies
 [System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") | Out-Null
