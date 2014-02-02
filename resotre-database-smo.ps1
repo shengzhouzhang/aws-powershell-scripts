@@ -1,52 +1,29 @@
 #============================================================
-# Restore a Database using PowerShell and SQL Server SMO
-# Restore to the same database, with different location
+# Restore a Database using PowerShell and sqlcmd
+# to the same database, with different location
 #============================================================
 
-backupFile = "C:\Testdb.bak"     #Back up file
+$backupFile = "C:\Users\Shengzhou\Downloads\RiskMan_backup_2014_01_31_040004_0169014.bak"
+$dbName = "RiskMan"
+$dblogicName = "RiskMan"
+$dbPath = "F:\RiskMan.mdf"
+$logLogicName = "RiskMan_Log"
+$logPath = "F:\RiskMan_Log.ldf"
 
-#load assemblies
-[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SMO") | Out-Null
 
-#Need SmoExtended for backup
-[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SmoExtended") | Out-Null
-[Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.ConnectionInfo") | Out-Null
-[Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.SmoEnum") | Out-Null
-
-$server = new-object Microsoft.SqlServer.Management.Smo.Server("(local)")
-$server.ConnectionContext.SqlExecutionModes = [Microsoft.SqlServer.Management.Common.SqlExecutionModes]::executesql
-$backupDevice = new-object Microsoft.SqlServer.management.Smo.BackupDeviceItem($backupFile, [Microsoft.SqlServer.Management.Smo.DeviceType]::File)
-$smoRestore = new-object Microsoft.SqlServer.Management.Smo.Restore
-
-#settings for restore
-$smoRestore.ReplaceDatabase = $true
-$smoRestore.NoRecovery = $false         #important! fixed stuck in restoring state.
-$smoRestore.Action = [Microsoft.SqlServer.Management.Smo.RestoreActionType]::Database
-
-$smoRestore.Devices.Add($backupDevice)
-
-# get db name
-$dbName = $smoRestore.ReadBackupHeader($server).Rows[0]["DatabaseName"]
-$smoRestore.Database = $dbName
-
-$newdb = new-object Microsoft.SqlServer.Management.Smo.RelocateFile
-$newdb.LogicalFileName = $smoRestore.ReadFileList($server).Rows[0][0].ToString();
-$newdb.LogicalFileName
-$newdb.PhysicalFileName = "F:\Testdb.mdb"    #restore to diffierent location
-$smoRestore.RelocateFiles.Add($newdb);
-
-$newlog = new-object Microsoft.SqlServer.Management.Smo.RelocateFile
-$newlog.LogicalFileName = $smoRestore.ReadFileList($server).Rows[1][0].ToString();
-$newlog.LogicalFileName
-$newlog.PhysicalFileName = "F:\Testdb_log.ldf" #restore to diffierent location
-$smoRestore.RelocateFiles.Add($newlog);
-
-#drop the database
-"killing database... " + $dbName
-$server.KillDatabase($dbName)
-
-#restore
+#drop & restore the database
 "Restoring database... " + $dbName
-$smoRestore.SqlRestore($server)
+#$smoRestore.SqlRestore($server)
+
+$sql = "IF EXISTS(select * from sys.databases where name='" + $dbName + "') DROP DATABASE " + $dbName + ";
+        RESTORE DATABASE RiskMan
+        FROM DISK = '" + $backupFile + "'
+        WITH MOVE '" + $dblogicName + "' TO '" + $dbPath + "',
+            MOVE '" + $logLogicName + "' TO '" + $logPath + "',
+            REPLACE,RECOVERY;"
+
+$sql
+
+sqlcmd -Q $sql
 
 "Done"
