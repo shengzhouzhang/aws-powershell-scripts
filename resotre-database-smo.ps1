@@ -33,13 +33,12 @@ $newdb = new-object Microsoft.SqlServer.Management.Smo.RelocateFile
 $newdb.LogicalFileName = $smoRestore.ReadFileList($server).Rows[0][0].ToString();
 $newdb.LogicalFileName
 $newdb.PhysicalFileName = "F:\Testdb.mdb"    #restore to diffierent location
+$smoRestore.RelocateFiles.Add($newdb);
 
 $newlog = new-object Microsoft.SqlServer.Management.Smo.RelocateFile
 $newlog.LogicalFileName = $smoRestore.ReadFileList($server).Rows[1][0].ToString();
 $newlog.LogicalFileName
 $newlog.PhysicalFileName = "F:\Testdb_log.ldf" #restore to diffierent location
-
-$smoRestore.RelocateFiles.Add($newdb);
 $smoRestore.RelocateFiles.Add($newlog);
 
 #drop the database
